@@ -40,7 +40,13 @@ const userSchema = new Schema(
         },
         refreshToken: {
             type: String
-        }
+        },
+        channels: [
+            {
+                type: Schema.Types.ObjectId,
+                ref: "Channel"
+            }
+        ]
     },
     {
        

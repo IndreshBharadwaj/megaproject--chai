@@ -26,6 +26,7 @@ const generateAccessAndRefereshTokens = async(userId) => {
 
 const registerUser = asyncHandler(async(req,res)=>{
     const {fullname,username,email,password} = req.body;
+    console.log(req.body)
 
     if(
         [fullname,username,email,password].some(field=>field?.trim()==="")
@@ -225,6 +226,12 @@ const updateUserAvatar = asyncHandler(async(req,res)=>{
     if(!avatarLocalPath) throw new ApiError(400,"Avatar file is missing");
     const avatar = await uploadOnCloudinary(avatarLocalPath);
     if(!avatar.url) throw new ApiError(400, "Error while uploading on avatar");
+
+
+    const oldCloudinaryAvatarPathId = req.user?.avatar;
+    const sp = oldCloudinaryAvatarPathId.split("/");
+    const pathId = sp[sp.length - 1].split(".").shift();
+
     const user = await User.findByIdAndUpdate(
         req.user?._id,
         {
@@ -234,6 +241,16 @@ const updateUserAvatar = asyncHandler(async(req,res)=>{
         },
         {new:true}
     ).select("-password -refreshToken");
+
+    try {
+        const resp = await deleteFromCloudinary(pathId);
+        if (resp) {
+            console.log(resp);
+            console.log("Old avatar is deleted.");
+        }
+    } catch (error) {
+        throw new ApiError(401, "Error while remove old avatar.");
+    }
 
     return res
     .status(200)
